@@ -15,10 +15,10 @@ pd.to_numeric(nums_data).astype('float64')
 # array values: pi, c (speed of light), R (radius of earth), s (length of sidereal day)
 
 rec = nums_data[0:4].to_numpy()
-sat_0 = nums_data[4:13].to_numpy()
 
 #satellites
 
+sat_0 = nums_data[4:13].to_numpy()
 sat_1 = nums_data[13:22].to_numpy()
 sat_2 = nums_data[22:31].to_numpy()
 sat_3 = nums_data[31:40].to_numpy()
@@ -42,7 +42,7 @@ sat_20 = nums_data[184:193].to_numpy()
 sat_21 = nums_data[193:202].to_numpy()
 sat_22 = nums_data[202:211].to_numpy()
 sat_23 = nums_data[211:220].to_numpy()
-
+sats = [sat_0, sat_1, sat_2, sat_3, sat_4, sat_5, sat_6, sat_7, sat_8, sat_9, sat_10, sat_11, sat_12, sat_13, sat_14, sat_15, sat_16, sat_17, sat_18, sat_19, sat_20, sat_21, sat_22, sat_23]
 
 #deg, rad to be vectors.
 #hard coded constants for testing, will need to be read from data.dat
@@ -53,24 +53,13 @@ R = 6.367444500000000000E+06  #radius of earth
 s = 8.616408999999999651E+04  #sidereal day
 p = s/2  #period
 
-#sattelite hardcode
-
-u_1 = np.array([1, 0, 0], dtype = float)
-v_1 = np.array([1, .573757664363510461594, .8191520442889917986], dtype = float)
-pd_1 = 4.308204499999999825E+04
-hs_1 =   2.020000000000000000E+07
-
-s = np.array ([u_1,v_1,pd_1,hs_1])
-s_1 = [u_1,v_1,pd_1,hs_1]
 #testing stuff
+
 B12 = np.array([40,45, 55.0, 1, 111, 50, 58.0, -1, 1372.00], dtype = float)
-
-#longa = np.array([gd, gm, gs, ew])
-
 
 #functional definitions
 
-def deg2rad(deg): #this nested form is the only way to get the correct number, s/(360*60^2) yields a wildly different answer (.0004)
+def deg2rad(deg): #this nested form is the only way to get the correct number, s/(360*60^2) yields a wildly different answer (+/-.0004)
 
     [d,m,s,sign] = [deg[0],deg[1],deg[2],deg[3]]
     Lat_d2r = 2 * pi * sign * (d + (m + s/60)/60)/360
@@ -132,21 +121,21 @@ def rad2deg(rad):
     deg = [degs[0,0], degs[0,1], degs[0,2], signs[0], degs[1,0], degs[1,1],float(degs[1,2]) , signs[1], rad[2]]
     return deg
 
-def rotation_offset(x,t_r):
-
+def rotation_offset(x,t_r): #this will compute x_v at t_v
     a = 2*pi*t_r/s
-    offset = np.matrix ([ [np.cos(a),-np.sin(a),0] , [np.sin(a),np.cos(a),0] , [0,0,1] ])
-    x_off = offset*x
+    cos = np.cos(a)
+    sin = np.sin(a)
+    offset = np.array([ [cos,-sin,0] , [sin,cos,0] , [0,0,1] ])
+    x_off = np.dot(offset,x)
     return x_off
 
-def horiz_check(x, s, t_s): #cartesian coords, we can run this function recursively for sets of sattelites and singular x with some for loops
-
-    s = (-1 * s[0] * np.sin(2 * pi * t_s / p + s[2]) + s[1] * np.cos(2 * pi * t_s / p + s[2]))
-    dif = s - x
-    f = 0
-
-    for n in (0,2):
-        f = f + x[n]*dif[n]
+def horiz_check(x_i, s_i, t_s): #cartesian coords, we can run this function recursively for sets of satellites and singular x with some for loops
+    u = np.array([s_i[0], s_i[1], s_i[2]])
+    v = np.array([s_i[3], s_i[4], s_i[5]])
+    sat_i = (R+s_i[7])-1*u*np.sin(2*pi*t_s/p + s_i[8]) + v*np.cos(2*pi*t_s/p + s_i[8])
+    dif = sat_i - x_i
+    # f = f + x_i[n]*dif[n]
+    f =  np.dot(x_i,dif)
     if f>0:
         s_up = 1 #true
     else:
@@ -158,21 +147,22 @@ def sat_time(x_v_i,t_v, s_i):  #first attempt at a newtons method code - also wo
     t_0 = t_v
     t = [t_0, t_v]
     u = np.array([s_i[0],s_i[1],s_i[2]])
+    v = np.array([s_i[3],s_i[4],s_i[5]])
     h = s_i[7]
     phase = s_i[8]
-    
-    sat_0 = (-1 * u * np.sin(2 * pi * t[0] / p + phase) + v * np.cos(2 * pi * t[0] / p + phase))   #x_s at t_v
+
+    sat_0 = (R+h)*(-1*u*np.sin(2*pi*t[0]/p + phase) + v*np.cos(2*pi*t[0]/p + phase))   #x_s at t_v
     dif_0 = (sat_0 - x_v_i)
 
-    t_0 = t_v - np.linalg.norm(dif_0)
+    t_0 = t_v - np.linalg.norm(dif_0)/c
 
     while errtime < .01/c:
-        sat = ( -1 * u * np.sin(2 * pi * t[0] / p + phase) + v * np.cos(2 * pi * t[0] / p + phase ))
-        dif = ( sat - x_v_i )
-        f = np.linalg.norm(dif)-c**2*( t_v - t[0] )**2
-        fpr = ( 4*pi( R+h ) ) * np.multiply(dif,sat)+2*c**2*( t_v - t[0] )
+        sat = (-1*u*np.sin(2*pi*t[0]/p + phase) + v*np.cos(2*pi*t[0]/p + phase ))
+        dif = (sat - x_v_i)
+        f = np.linalg.norm(dif)-c**2*(t_v - t[0])**2
+        fpr = (4*pi*(R + h))*np.dot(dif,sat) + 2*c**2*(t_v - t[0])
         t[1] = t_0 - f/fpr
-        errtime = np.sqrt(t[1]**2-t[0]**2)
+        errtime = np.absolute(t[1]-t[0])
     t_s = t[1]
     return t_s
 
@@ -201,16 +191,21 @@ def sat_time(x_v_i,t_v, s_i):  #first attempt at a newtons method code - also wo
 
 #tests
 
-B12r = deg2rad(B12)
-B12c = rad2cart(B12r)
-B12a1a1 = deg2cart(B12)
-B12rev = cart2rad(B12a1a1)
-B12rev2 = rad2deg(B12rev)
 
-print(*B12)
-print(*B12rev)
-print(*B12rev2)
 
-B12above = np.array([40,45, 55.0, 1, 111, 50, 58.0, -1, 13720.00], dtype = float)
-B12ac = deg2cart(B12above)
-print(check)
+#testing
+B12cart =  deg2cart(B12)
+t_v = 12123.0
+x_v_t = rotation_offset(B12cart, t_v)
+t_s = []
+s_ab = []
+n = 0
+while n < 23:
+    t_s.append(sat_time(x_v_t,t_v,sats[n]))
+    s_ab.append(horiz_check(x_v_t, sats[n], t_s[n]))
+    n = n +1
+print(t_s)
+print(s_ab)
+
+
+
