@@ -42,7 +42,12 @@ sat_20 = nums_data[184:193].to_numpy()
 sat_21 = nums_data[193:202].to_numpy()
 sat_22 = nums_data[202:211].to_numpy()
 sat_23 = nums_data[211:220].to_numpy()
+
 sats = [sat_0, sat_1, sat_2, sat_3, sat_4, sat_5, sat_6, sat_7, sat_8, sat_9, sat_10, sat_11, sat_12, sat_13, sat_14, sat_15, sat_16, sat_17, sat_18, sat_19, sat_20, sat_21, sat_22, sat_23]
+
+#
+
+s_ab_list = []
 
 #deg, rad to be vectors.
 #hard coded constants for testing, will need to be read from data.dat
@@ -58,6 +63,12 @@ p = s/2  #period
 B12 = np.array([40,45, 55.0, 1, 111, 50, 58.0, -1, 1372.00], dtype = float)
 
 #functional definitions
+
+def sat_locs(s_i, t):
+    u = np.array([s_i[0], s_i[1], s_i[2]])
+    v = np.array([s_i[3], s_i[4], s_i[5]])
+    x = (R + s_i[7]) * (-1 * u * np.sin(2 * pi * t / p + s_i[8]) + v * np.cos(2 * pi * t / p + s_i[8]))
+    return x
 
 def deg2rad(deg): #this nested form is the only way to get the correct number, s/(360*60^2) yields a wildly different answer (+/-.0004)
 
@@ -76,12 +87,12 @@ def rad2cart(rad):
     cart = [x,y,z]
     return cart
 
-def deg2cart(deg): #if you want to do it all at once.
+def deg2cart(deg):  #if you want to do it all at once.
 
-    [d, m, s, sign] = [deg[0], deg[1], deg[2], deg[3]]
-    Lat_d2r = 2 * pi * sign * (d + (m + s / 60) / 60) / 360
-    [d, m, s, sign] = [deg[4], deg[5], deg[6], deg[7]]
-    Long_d2r = 2 * pi * sign * (d + (m + s / 60) / 60) / 360
+    [dt, mt, st, sign] = [deg[0], deg[1], deg[2], deg[3]]
+    Lat_d2r = 2 * pi * sign * (dt + (mt + st / 60) / 60) / 360
+    [dg, mg, sg, sign] = [deg[4], deg[5], deg[6], deg[7]]
+    Long_d2r = 2 * pi * sign * (dg + (mg + sg / 60) / 60) / 360
     d2r = [Lat_d2r, Long_d2r, deg[8]]
     x = (R + d2r[2]) * np.cos(d2r[0]) * np.cos(d2r[1])
     y = (R + d2r[2]) * np.cos(d2r[0]) * np.sin(d2r[1])
@@ -101,16 +112,16 @@ def rad2deg(rad):
     degs = np.array([[1,2,3],[1,2,3]], dtype=float) #spent way too long trying to figure out why i kept getting a integer...always declare your variable type robert.
     r = [0,1]
     signs = [0,0]
-    if rad[0] < 0: #theres a way to make this look way better didnt want to work with nested loops
+    if rad[0] < 0: #theres a way to make this look way better didn't want to work with nested loops
         signs[0] = -1
     else:
-        signs[0] =  1
+        signs[0] = 1
     if rad[1] < 0:
         signs[1] = -1
     else:
-        signs[1] =  1
+        signs[1] = 1
     for n in r:
-        init = rad[n] * ((360 / (2)) / pi) * signs[n]
+        init = rad[n] * ((360 / 2) / pi) * signs[n]
         split = math.modf(init)
         degs[n,0] = split[1]
         inter= math.modf(split[0]*60)
@@ -118,7 +129,7 @@ def rad2deg(rad):
         inter2 = inter[0]*60
         degs[n,2] = inter2
 
-    deg = [degs[0,0], degs[0,1], degs[0,2], signs[0], degs[1,0], degs[1,1],float(degs[1,2]) , signs[1], rad[2]]
+    deg = [degs[0,0], degs[0,1], degs[0,2], signs[0], degs[1,0], degs[1,1],float(degs[1,2]), signs[1], rad[2]]
     return deg
 
 def rotation_offset(x,t_r): #this will compute x_v at t_v
@@ -129,42 +140,72 @@ def rotation_offset(x,t_r): #this will compute x_v at t_v
     x_off = np.dot(offset,x)
     return x_off
 
-def horiz_check(x_i, s_i, t_s): #cartesian coords, we can run this function recursively for sets of satellites and singular x with some for loops
-    u = np.array([s_i[0], s_i[1], s_i[2]])
-    v = np.array([s_i[3], s_i[4], s_i[5]])
-    sat_i = (R+s_i[7])-1*u*np.sin(2*pi*t_s/p + s_i[8]) + v*np.cos(2*pi*t_s/p + s_i[8])
-    dif = sat_i - x_i
-    # f = f + x_i[n]*dif[n]
-    f =  np.dot(x_i,dif)
-    if f>0:
-        s_up = 1 #true
-    else:
-        s_up = 0 #false
-    return s_up #boolean
+def horiz_check(x_i, s_i_list, t_s):  #cartesian coords, we can run this function recursively for sets of satellites and singular x with some for loops
+    truth_list = []
+    n = 0
+    while n < 23:
+        s_i = s_i_list[n]
+        # u = np.array([s_i[0], s_i[1], s_i[2]])
+        # v = np.array([s_i[3], s_i[4], s_i[5]])
+        # s = (R+s_i[7])*(-1*u*np.sin(2*pi*t_s/p + s_i[8]) + v*np.cos(2*pi*t_s/p + s_i[8]))
+        s = sat_locs(s_i,t_s)
+        f = np.dot(x_i,s)
+        g = np.dot(x_i,x_i)
+        if f>g:
+            s_up = 1  #true
+        else:
+            s_up = 0  #false
+        truth_list.append(s_up)
+        n = n+1
+    return truth_list #boolean
 
-def sat_time(x_v_i,t_v, s_i):  #first attempt at a newtons method code - also worth mentioning that t_v will be read in
-    errtime = 0  #a lot of ugly declarations
+def sat_time(x_v_i,t_v, s_i_list):  #first attempt at a newtons method code - also worth mentioning that t_v will be read in
+    t_s_list = []
+    errtime = 1  #a lot of ugly declarations
+    n = 0
     t_0 = t_v
     t = [t_0, t_v]
-    u = np.array([s_i[0],s_i[1],s_i[2]])
-    v = np.array([s_i[3],s_i[4],s_i[5]])
-    h = s_i[7]
-    phase = s_i[8]
+    while n < 23:
+        s_i = s_i_list[n]
+        u = np.array([s_i[0],s_i[1],s_i[2]])
+        v = np.array([s_i[3],s_i[4],s_i[5]])
+        h = s_i[7]
+        phase = s_i[8]
 
-    sat_0 = (R+h)*(-1*u*np.sin(2*pi*t[0]/p + phase) + v*np.cos(2*pi*t[0]/p + phase))   #x_s at t_v
-    dif_0 = (sat_0 - x_v_i)
+        # sat_0 = (R+h)*(-1*u*np.sin(2*pi*t[0]/p + phase) + v*np.cos(2*pi*t[0]/p + phase))   #x_s at t_v
+        sat_0 = sat_locs(s_i, t_0)
+        dif_0 = (sat_0 - x_v_i)
 
-    t_0 = t_v - np.linalg.norm(dif_0)/c
+        t[0] = t_v - np.linalg.norm(dif_0)/c
+        errmax = .01/c
 
-    while errtime < .01/c:
-        sat = (-1*u*np.sin(2*pi*t[0]/p + phase) + v*np.cos(2*pi*t[0]/p + phase ))
-        dif = (sat - x_v_i)
-        f = np.linalg.norm(dif)-c**2*(t_v - t[0])**2
-        fpr = (4*pi*(R + h))*np.dot(dif,sat) + 2*c**2*(t_v - t[0])
-        t[1] = t_0 - f/fpr
-        errtime = np.absolute(t[1]-t[0])
-    t_s = t[1]
-    return t_s
+        while errtime >= errmax:
+            sat = sat_locs(s_i, t[0])
+            dif = (sat - x_v_i)
+            f = np.linalg.norm(dif)**2-c**2*(t_v - t[0])**2
+            fpr = (4*pi*(R + h))*np.dot(dif,sat) + 2*(c**2)*(t_v - t[0])
+            t[1] = t[0] - f/fpr
+            errtime = np.absolute(t[1]-t[0])
+            t[0] = t[1]
+        t_s_list.append(t[0])
+        n = n+1
+    return t_s_list
+
+def above_index(list,item):
+    start_at = -1
+    locs = []
+    while True:
+        try:
+            loc = list.index(item,start_at+1)
+        except ValueError:
+            break
+        else:
+            locs.append(loc)
+            start_at = loc
+    return locs
+
+
+#have a better version of this above
 
 # def sat_time(x_v_i,t_v, u_s,v_s,phase_s):  #first attempt at a newtons method code
 #     errtime = 0  #a lot of ugly declarations
@@ -194,18 +235,49 @@ def sat_time(x_v_i,t_v, s_i):  #first attempt at a newtons method code - also wo
 
 
 #testing
-B12cart =  deg2cart(B12)
-t_v = 12123.0
-x_v_t = rotation_offset(B12cart, t_v)
-t_s = []
-s_ab = []
+x_v_c = deg2cart(B12)  #B12 here will be replaced by a read-in x_v from vehicle.log
+t_v = 12123.0  #will be read in
+x_v_t = rotation_offset(x_v_c, t_v)
+
 n = 0
-while n < 23:
-    t_s.append(sat_time(x_v_t,t_v,sats[n]))
-    s_ab.append(horiz_check(x_v_t, sats[n], t_s[n]))
-    n = n +1
+
+t_s = sat_time(x_v_t,t_v,sats)
+s_ab = horiz_check(x_v_t,sats,t_v)
+above = above_index(s_ab,1)
+
+
+def writeout(t_s_list, above_list):
+    sat_exp = []
+    n_w = 0
+    len_w = len(above_list)-1
+    while n_w <= len_w:
+        sat_exp.append([above_list[n_w], t_s_list[above_list[n_w]], sat_locs(sats[above_list[n_w]],t_s_list[above_list[n_w]])])
+        n_w = n_w + 1
+    return sat_exp #need a way to save the last x as an array without it telling me its an array
+
+xp = writeout(t_s,above) #correctish needs format work
+
 print(t_s)
 print(s_ab)
+print(above)
+print(*xp)
+
+#this is where reciever code will be for now - we will feed out (i, t_i, s_i)
+
+indeces = xp #read in the standard output - a list of satellites in satndard form as listed above where s_i is a throuple, we'll have to store a variable for that
+                #                                                                                                  throuple and assign a np.array to it
+
+# def lsqNM(s_i_list, t_i_list):
+#     N = []
+#     N[0] = np.linalg.norm[s_i_list[0]-x]
+#     for n in indices:
+#         N[1] = np.linalg.norm[s_i_list[n-1]-x]
+#         A_i = N[1]-N[0]-c*(t_i_list[n])
+
+
+
+
+
 
 
 
