@@ -215,9 +215,9 @@ def writeout(t_s_list, above_list):
     sat_exp = []
     # sat_total = np.array([],[],[])
     n_w = 0
-    len_w = len(above_list)-1
+    len_w = len(above_list)
     while n_w <= len_w:
-        s_x = sat_locs(sats[above_list[n_w]],t_s_list[above_list[n_w]])
+        s_x = sat_locs(sats[above_list[n_w-1]],t_s_list[above_list[n_w-1]])
         x = s_x[0]
         y = s_x[1]
         z = s_x[2]
@@ -230,3 +230,5 @@ def writeout(t_s_list, above_list):
     return sat_exp #need a way to save the last x as an array without it telling me its an array
 
 xp = writeout(t_s,above) #correctish needs format work
+
+print(*xp)
