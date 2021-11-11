@@ -180,12 +180,7 @@ def sat_time(x_v_i,t_v, s_i_list):  #first attempt at a newtons method code - al
     t = [t_0, t_v]
     while n < 24:
         s_i = s_i_list[n]
-        u = np.array([s_i[0],s_i[1],s_i[2]])
-        v = np.array([s_i[3],s_i[4],s_i[5]])
         h = s_i[7]
-        phase = s_i[8]
-
-        # sat_0 = (R+h)*(-1*u*np.sin(2*pi*t[0]/p + phase) + v*np.cos(2*pi*t[0]/p + phase))   #x_s at t_v
         sat_0 = sat_locs(s_i, t_0)
         dif_0 = (sat_0 - x_v_i)
 
@@ -228,10 +223,6 @@ t_s = sat_time(x_v_t,t_v,sats)
 s_ab = horiz_check(x_v_t,sats,t_v)
 above = above_index(s_ab,1)
 
-print(*s_ab)
-print(*above)
-print(*sat_locs(sats[11],t_s[11]))
-
 def writeout(t_s_list, above_list):
     sat_exp = []
     # sat_total = np.array([],[],[])
@@ -245,14 +236,15 @@ def writeout(t_s_list, above_list):
         y = s_x[1]
         z = s_x[2]
         sat_exp = [above_list[n_w], t_s_list[above_list[n_w]], x, y, z]
-        print(*sat_exp),
+        for i in range(0,len(sat_exp)):
+            print(sat_exp[i], end=" "),
         # sat_total.append(sat_exp)
         n_w = n_w + 1
-    while n_w == len_w:
+        print()
+    if n_w == len_w:
         x = 0
     return sat_exp
 
 xp = writeout(t_s,above)
 
-print(*xp)
 

@@ -1,7 +1,3 @@
-
-import io
-import subprocess
-
 import numpy as np
 import math as math
 import pandas as pd
@@ -19,6 +15,11 @@ pd.to_numeric(nums_data).astype('float64')
 # array values: pi, c (speed of light), R (radius of earth), s (length of sidereal day)
 
 rec = nums_data[0:4].to_numpy()
+pi = 2*np.arccos(0)
+c = rec[1]
+R = rec[2]
+s = rec[3]
+p = s/2
 
 #satellites
 
@@ -156,10 +157,10 @@ def writeout(t_s_list, above_list):
 
 read_in = open(r"read_in.txt", "w+")
 
-import subprocess
+import subprocess #this should all be written as a single command
 proc = subprocess.Popen(['python','satellite.py'],stdout=subprocess.PIPE) #will need to ask for engine and program and then input those instead
 while True:
-    line = proc.stdout.readline()giot
+    line = proc.stdout.readline()
     l = str(line.rstrip())
     if not line:
         break
@@ -189,11 +190,7 @@ while i <= n-1:
     data = Data[i]
     data_array[i, 0] = float(data.split(' ')[0])
     data_array[i, 1] = float(data.split(' ')[1])
-    # x = data.split(' ')[2]
-    # y = data.split(' ')[3]
-    # z =data.split(' ')[4]
-    # data_array[i, 2] = np.array([x,y,z])
     i = i+1
+i = 0
 
 
-print(*data_array)
