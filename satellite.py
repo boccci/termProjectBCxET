@@ -1,9 +1,9 @@
 import numpy as np
 import math as math
 import pandas as pd
-from decimal import *
 
-data = pd.read_csv('data_dup.dat', sep='/=', header = None, skipinitialspace=False, names =['value','name'], engine= 'python')
+
+data = pd.read_csv('data.dat', sep='/=', header = None, skipinitialspace=False, names =['value','name'], engine= 'python')
 df = data.copy()
 
 # Split value column into arrays by receiver and satellite information
@@ -135,18 +135,36 @@ def rotation_offset(x,t_r): #this will compute x_v at t_v
     x_off = np.dot(offset,x)
     return x_off
 
+# def horiz_check(x_i, s_i_list, t_s):  #cartesian coords, we can run this function recursively for sets of satellites and singular x with some for loops
+#     truth_list = []
+#     n = 0
+#     while n < 24:
+#         s_i = s_i_list[n]
+#         # u = np.array([s_i[0], s_i[1], s_i[2]])
+#         # v = np.array([s_i[3], s_i[4], s_i[5]])
+#         # s = (R+s_i[7])*(-1*u*np.sin(2*pi*t_s/p + s_i[8]) + v*np.cos(2*pi*t_s/p + s_i[8]))
+#         s = sat_locs(s_i,t_s)
+#         f = np.dot(x_i,s)
+#         g = np.dot(x_i,x_i)
+#         if f>g:
+#             s_up = 1  #true
+#         else:
+#             s_up = 0  #false
+#         truth_list.append(s_up)
+#         n = n+1
+#     return truth_list #boolean
+
 def horiz_check(x_i, s_i_list, t_s):  #cartesian coords, we can run this function recursively for sets of satellites and singular x with some for loops
     truth_list = []
     n = 0
-    while n < 23:
+    while n < 24:
         s_i = s_i_list[n]
         # u = np.array([s_i[0], s_i[1], s_i[2]])
         # v = np.array([s_i[3], s_i[4], s_i[5]])
         # s = (R+s_i[7])*(-1*u*np.sin(2*pi*t_s/p + s_i[8]) + v*np.cos(2*pi*t_s/p + s_i[8]))
-        s = sat_locs(s_i,t_s)
-        f = np.dot(x_i,s)
-        g = np.dot(x_i,x_i)
-        if f>g:
+        s_dif = sat_locs(s_i,t_s) - x_i
+        f = np.dot(x_i,s_dif)
+        if f > 0:
             s_up = 1  #true
         else:
             s_up = 0  #false
@@ -160,7 +178,7 @@ def sat_time(x_v_i,t_v, s_i_list):  #first attempt at a newtons method code - al
     n = 0
     t_0 = t_v
     t = [t_0, t_v]
-    while n < 23:
+    while n < 24:
         s_i = s_i_list[n]
         u = np.array([s_i[0],s_i[1],s_i[2]])
         v = np.array([s_i[3],s_i[4],s_i[5]])
@@ -172,7 +190,7 @@ def sat_time(x_v_i,t_v, s_i_list):  #first attempt at a newtons method code - al
         dif_0 = (sat_0 - x_v_i)
 
         t[0] = t_v - np.linalg.norm(dif_0)/c
-        errmax = .01/c
+        errmax = .001/c
 
         while errtime >= errmax:
             sat = sat_locs(s_i, t[0])
@@ -210,25 +228,31 @@ t_s = sat_time(x_v_t,t_v,sats)
 s_ab = horiz_check(x_v_t,sats,t_v)
 above = above_index(s_ab,1)
 
+print(*s_ab)
+print(*above)
+print(*sat_locs(sats[11],t_s[11]))
 
 def writeout(t_s_list, above_list):
     sat_exp = []
     # sat_total = np.array([],[],[])
     n_w = 0
     len_w = len(above_list)
-    while n_w <= len_w:
-        s_x = sat_locs(sats[above_list[n_w-1]],t_s_list[above_list[n_w-1]])
+    print(len_w)
+    print(above_list)
+    while n_w < len_w:
+        s_x = sat_locs(sats[above_list[n_w]],t_s_list[above_list[n_w]])
         x = s_x[0]
         y = s_x[1]
         z = s_x[2]
-        above_list[n_w]
         sat_exp = [above_list[n_w], t_s_list[above_list[n_w]], x, y, z]
         print(*sat_exp),
         # sat_total.append(sat_exp)
         n_w = n_w + 1
+    while n_w == len_w:
+        x = 0
+    return sat_exp
 
-    return sat_exp #need a way to save the last x as an array without it telling me its an array
-
-xp = writeout(t_s,above) #correctish needs format work
+xp = writeout(t_s,above)
 
 print(*xp)
+
