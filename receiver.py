@@ -177,20 +177,99 @@ with open("read_in.txt", 'r') as file:
 
 print(n)
 
-# data_array = np.ndarray(shape=(n,3))
+# # data_array = np.ndarray(shape=(n,3))
+# #
+# # print(*data_array)
 #
-# print(*data_array)
+# print(Data[0])
+# data_array = np.ndarray(shape = (n,2))
+#
+# i=0
+#
+# while i <= n-1:
+#     data = Data[i]
+#     data_array[i, 0] = float(data.split(' ')[0])
+#     data_array[i, 1] = float(data.split(' ')[1])
+#     i = i+1
+# i = 0
 
-print(Data[0])
-data_array = np.ndarray(shape = (n,2))
+def Jacobian(s_i_list, t_i_list, x_k):
+    J = np.array([],[],[])
+    k = 0
+    j = 0
+    while j <= 2:
+        while k <= 2:
+            s_i = sat_locs(s_i_list[j], t_i_list[j])
+            s_i_1 = sat_locs(s_i_list[j+1], t_i_list[j+1])
+            J[j, k] = (s_i[k]-x_k[k])/np.linalg.norm(s_i[k]-x_k[k])-(s_i_1[k]-x_k[k])/np.linalg.norm(s_i_1[k]-x_k[k])
+            k = k + 1
+        j = j + 1
+    return J
 
-i=0
+def Func(s_i_list, t_i_list, x_k):
+    F = np.array([],[],[])
+    j = 0
+    k = 0
+    while j <= 2:
+        while k <= 2:
+            s_i = sat_locs(s_i_list[j], t_i_list[j])
+            s_i_1 = sat_locs(s_i_list[j + 1], t_i_list[j + 1])
+            F[j,k] = np.linalg.norm(s_i_1[k]-x_k[k]) - np.linalg.norm(s_i[k]-x_k[k]) - c*(t_i_list[j]-t_i_list[j+1])
+            k = k + 1
+        j = j + 1
+    return F
 
-while i <= n-1:
-    data = Data[i]
-    data_array[i, 0] = float(data.split(' ')[0])
-    data_array[i, 1] = float(data.split(' ')[1])
-    i = i+1
-i = 0
+def LU(A, b):
+    N = len(A)
+    L = np.zeros(shape=(N,N))
+    U = np.zeros(shape=(N,N))
+    x = np.zeros(shape=(N,1))
+    y = np.zeros(shape=(N,1))
+    for i in range(N):
+
+        for j in range(i, N): #
+            sum = 0
+            for k in range(i):
+                sum = sum + L[i,k]*U[k,j]
+            U[i,j] = A[i,j] - sum
+        for j in range(i,N):
+            if i == j:
+                L[i,i] = 1
+            else:
+                sum = 0
+                for k in range(i):
+                    sum = sum + L[j,k]*U[k,i]
+                L[j,i] = (A[j,i]-sum)/U[i,i]
+    while i <= N:
+        if i == 0:
+            y[0,0] = b[0,0]
+            i = i + 1
+        else:
+            sum = 0
+            for k in range(i):
+                sum = sum + y[i-1,0]*L[i,i-0]
+                y[i,0] = b[i,0] - sum
+            i = i + 1
+    while i >= 0:
+        if i == N:
+            x[N,0] = y[N,0]/U[N,N]
+            i = i - 1
+        else:
+            sum = 0
+            for k in range(i+1,N):
+                sum = sum + U[i,k]*x[k,0]
+            x[i,0] = (y[i,0]- sum)/U[i,i]
+    return x
+
+def Newt(s_i_list,t_i_list,x_0):
+    x_k = x_0
+    s = np.array([0],[0],[0])
+    while np.linalg.norm(s) >= .0001:
+        J = Jacobian(s_i_list, t_i_list, x_k)
+        F = Func(s_i_list, t_i_list, x_k)
+        s = LU(J,-F)
+        x_k[0] = x_k[0] + s
+    return x_k
+
 
 
