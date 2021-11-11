@@ -1,6 +1,7 @@
 import numpy as np
 import math as math
 import pandas as pd
+import sys
 
 
 data = pd.read_csv('data.dat', sep='/=', header = None, skipinitialspace=False, names =['value','name'], engine= 'python')
@@ -236,8 +237,9 @@ def writeout(t_s_list, above_list):
         y = s_x[1]
         z = s_x[2]
         sat_exp = [above_list[n_w], t_s_list[above_list[n_w]], x, y, z]
-        for i in range(0,len(sat_exp)):
-            print(sat_exp[i], end=" "),
+        sys.stdout.write("{} {} {} {} {}".format(sat_exp[0],sat_exp[1],sat_exp[2],sat_exp[3],sat_exp[4]))
+        # for i in range(0,len(sat_exp)):
+        #     print(sat_exp[i], end=" "),
         # sat_total.append(sat_exp)
         n_w = n_w + 1
         print()
