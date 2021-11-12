@@ -150,8 +150,8 @@ def horiz_check(x_i, s_i_list, t_s):  #cartesian coords, we can run this functio
         # v = np.array([s_i[3], s_i[4], s_i[5]])
         # s = (R+s_i[7])*(-1*u*np.sin(2*pi*t_s/p + s_i[8]) + v*np.cos(2*pi*t_s/p + s_i[8]))
         s = sat_locs(s_i,t_s)
-        f = np.dot(x_i,s)
-        g = np.dot(x_i,x_i)
+        f = x_i.dot(s)
+        g = x_i.dot(x_i)
         if f>g:
             s_up = 1  #true
         else:
@@ -429,9 +429,9 @@ def Jacobian(s_i_list, t_i_list, x_k):
     s2 = sat_locs(sats[s_i_list[2]], t_i_list[2])
     s3 = sat_locs(sats[s_i_list[3]], t_i_list[3])
     for k in range(0,3):
-        J[0, k] = (s0[k] - x_k[k]) / np.linalg.norm(s0 - x_k) - (s1[k] - x_k[k]) / np.linalg.norm(s1 - x_k)
-        J[1, k] = (s1[k] - x_k[k]) / np.linalg.norm(s1 - x_k) - (s2[k] - x_k[k]) / np.linalg.norm(s2 - x_k)
-        J[2, k] = (s2[k] - x_k[k]) / np.linalg.norm(s2 - x_k) - (s3[k] - x_k[k]) / np.linalg.norm(s3 - x_k)
+        J[0, k] = ((s0[k] - x_k[k]) / np.linalg.norm(s0 - x_k)) - ((s1[k] - x_k[k]) / np.linalg.norm(s1 - x_k))
+        J[1, k] = ((s1[k] - x_k[k]) / np.linalg.norm(s1 - x_k)) - ((s2[k] - x_k[k]) / np.linalg.norm(s2 - x_k))
+        J[2, k] = ((s2[k] - x_k[k]) / np.linalg.norm(s2 - x_k)) - ((s3[k] - x_k[k]) / np.linalg.norm(s3 - x_k))
     return J
 
 def Func(s_i_list, t_i_list, x_k):
@@ -439,10 +439,11 @@ def Func(s_i_list, t_i_list, x_k):
     j = 0
     k = 0
     while j <= 2:
-
         s_i = sat_locs(sats[s_i_list[j]], t_i_list[j])
         s_i_1 = sat_locs(sats[s_i_list[j + 1]], t_i_list[j + 1])
-        F[j,0] = np.linalg.norm(s_i_1[j]-x_k[j]) - np.linalg.norm(s_i[j]-x_k[j]) - c*(t_i_list[j]-t_i_list[j+1])
+        s_i_1_r= cart2rad(s_i_1)
+        s_i_1_d = rad2deg(s_i_1_r)
+        F[j,0] = np.linalg.norm(s_i_1-x_k) - np.linalg.norm(s_i-x_k) - c*(t_i_list[j]-t_i_list[j+1])
         j = j + 1
     return F
 
@@ -504,7 +505,7 @@ def LU(A,b_):
                 sum += float((L[i][j]*U[j][k]))
             U[i][k] = float(A_int[i][k] - sum)
 
-        #Lower
+        #Lowe
         for k in range(i, n):
             if (i == k):
                 L[i][i] = 1
@@ -539,19 +540,24 @@ def LU(A,b_):
 
 
 def Newt(s_i_list,t_i_list,x_0):
-    x_k = np.zeros(shape=(3,1), dtype=float)
+    x_k = np.array([0,0,0], dtype=float)
     x_k[0] = x_0[0]
     x_k[1] = x_0[1]
     x_k[2] = x_0[2]
+    x = [x_k,x_0]
+    err=1
+    errmax = .001
     s_k = np.ones(shape=(3,1), dtype=float)
-    while np.linalg.norm(s_k) >= .001:
-        J = Jacobian(s_i_list, t_i_list, x_k)
-        F = Func(s_i_list, t_i_list, x_k)
+    while err >= errmax:
+        J = Jacobian(s_i_list, t_i_list, x[0])
+        F = Func(s_i_list, t_i_list, x[0])
         s_k = LU(J,-F)
-        x_k[0] = x_k[0] + s_k[0]
-        x_k[1] = x_k[1] + s_k[1]
-        x_k[2] = x_k[2] + s_k[2]
+        x[1] = x[0] + s_k
+        err = np.linalg.norm(s_k)
+        x[0] = x[1]
+
     return x_k
+
 x_v_c = deg2cart(B12)  #B12 here will be replaced by a read-in x_v from vehicle.log
 t_v = 12123.0  #will be read in
 x_v_t = rotation_offset(x_v_c, t_v)
@@ -560,10 +566,17 @@ n = 0
 
 t_s = sat_time(x_v_t,t_v,sats)
 s_ab = horiz_check(x_v_t,sats,t_v)
+
 above = above_index(s_ab,1)
+
 x_b12 = Newt(above,t_s, deg2cart(B12))
 x_b12rad = cart2rad(x_b12)
 x_b12deg = rad2deg(x_b12rad)
+# print(deg2cart(B12))
+# print(J)
+# print(F)
+# s_k = LU(J,-F)
+print(*x_b12deg)
 
 
 
