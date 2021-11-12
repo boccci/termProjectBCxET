@@ -172,10 +172,11 @@ def Func(s_i_list, t_i_list, x_k):
     j = 0
     k = 0
     while j <= 2:
-
         s_i = sat_locs(sats[s_i_list[j]], t_i_list[j])
         s_i_1 = sat_locs(sats[s_i_list[j + 1]], t_i_list[j + 1])
-        F[j,0] = np.linalg.norm(s_i_1[j]-x_k[j]) - np.linalg.norm(s_i[j]-x_k[j]) - c*(t_i_list[j]-t_i_list[j+1])
+        s_i_1_r= cart2rad(s_i_1)
+        s_i_1_d = rad2deg(s_i_1_r)
+        F[j,0] = np.linalg.norm(s_i_1-x_k) - np.linalg.norm(s_i-x_k) - c*(t_i_list[j]-t_i_list[j+1])
         j = j + 1
     return F
 
@@ -223,62 +224,59 @@ def Func(s_i_list, t_i_list, x_k):
 #     return x
 
 
-def LU(A, b):
-    N = len(A)
-    L = np.zeros(shape=(N,N))
-    U = np.zeros(shape=(N,N))
-    x = np.zeros(shape=(N,1))
-    y = np.zeros(shape=(N,1))
-    for i in range(0,N-1):
+def LU(A,b_):
+    A_int = np.array([[A[0,0],A[0,1],A[0,2]],[A[1,0],A[1,1],A[1,2]],[A[2,0],A[2,1],A[2,2]]], dtype=float)
+    L = np.zeros(shape=(3,3), dtype=float)
+    U = np.zeros(shape=(3,3), dtype=float)
+    n = len(A)
+    for i in range(n):
 
-        for j in range(i, N): #
+        #Upper
+        for k in range(i, n):
             sum = 0
-            for k in range(i):
-                sum = sum + L[i,k]*U[k,j]
-            U[i,j] = A[i,j] - sum
-        for j in range(i,N):
-            if i == j:
-                L[i,i] = 1
+            for j in range(0,i):
+                sum += float((L[i][j]*U[j][k]))
+            U[i][k] = float(A_int[i][k] - sum)
+
+        #Lowe
+        for k in range(i, n):
+            if (i == k):
+                L[i][i] = 1
             else:
                 sum = 0
-                for k in range(i):
-                    sum = sum + L[j,k]*U[k,i]
-                L[j,i] = (A[j,i]-sum)/U[i,i]
-        j=0
-        while j <= N-1:
-            if j == 0:
-                y[0,0] = b[0,0]
-                j = j + 1
-            else:
-                sum = 0
-                for k in range(i):
-                    sum = sum + y[j-1,0]*L[j,j-1]
-                    y[j,0] = b[j,0] - sum
-                j = j + 1
-        j=N-1
-        while j >= 0:
-            if j == N-1:
-                x[j,0] = y[j,0]/U[j,j]
-                j = j - 1
-            else:
-                sum = 0
-                for k in range(j+1,N):
-                    sum = sum + U[j,k]*x[k,0]
-                x[i,0] = (y[j,0]- sum)/U[j,j]
-                j = j - 1
-        return x
+                for j in range(i):
+                    sum += float(L[k][j]*U[j][i])
+                L[k][i] = ((A_int[k][i] - sum)/U[i][i])
+    y = np.array([0,0,0], dtype=float)
+    x = np.array([0,0,0], dtype=float)
+    N = len(A)
+    b = np.array([b_[0][0],b_[1][0],b_[2][0]],dtype=float)
+    y[0] = float(b[0])
+    y[1] = float(b[1] - y[0]*L[1,0])
+    y[2] = float(b[2] - (y[1]*L[2,1]+y[0]*L[2,0]))
+    x[2] = y[2]/U[2,2]
+    x[1] = (y[1]-x[2]*U[1,2])/U[1,1]
+    int = x[1]*U[0,1]-x[2]*U[0,2]
+    x[0] = (y[0]-x[1]*U[0,1]-x[2]*U[0,2])/U[0,0]
+    return x
 
 def Newt(s_i_list,t_i_list,x_0):
-    x_k = np.zeros(shape=(3,1))
+    x_k = np.array([0,0,0], dtype=float)
     x_k[0] = x_0[0]
     x_k[1] = x_0[1]
     x_k[2] = x_0[2]
-    s_k = np.ones(shape=(3,1))
-    while np.linalg.norm(s) >= .0001:
-        J = Jacobian(s_i_list, t_i_list, x_k)
-        F = Func(s_i_list, t_i_list, x_k)
+    x = [x_k,x_0]
+    err=1
+    errmax = .0001
+    s_k = np.ones(shape=(3,1), dtype=float)
+    while err >= errmax:
+        J = Jacobian(s_i_list, t_i_list, x[0])
+        F = Func(s_i_list, t_i_list, x[0])
         s_k = LU(J,-F)
-        x_k = x_k + s_k
+        x[1] = x[0] + s_k
+        err = np.linalg.norm(s_k)
+        x[0] = x[1]
+
     return x_k
 
 
@@ -309,8 +307,6 @@ def receive():
         for k in range(0, len(data)):
             sat_list.append(int(data[k, 0]))
             t_list.append(float(data[k, 1]))
-        print(sat_list)
-        print(t_list)
         x = Newt(sat_list, t_list, deg2cart(B12))
         x_r = cart2rad(x)
         x_d = rad2deg(x_r)

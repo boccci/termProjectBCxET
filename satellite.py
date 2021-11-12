@@ -149,9 +149,10 @@ def horiz_check(x_i, s_i_list, t_s):  # cartesian coords, we can run this functi
         # u = np.array([s_i[0], s_i[1], s_i[2]])
         # v = np.array([s_i[3], s_i[4], s_i[5]])
         # s = (R+s_i[7])*(-1*u*np.sin(2*pi*t_s/p + s_i[8]) + v*np.cos(2*pi*t_s/p + s_i[8]))
-        s_dif = sat_locs(s_i, t_s) - x_i
-        f = np.dot(x_i, s_dif)
-        if f > 0:
+        s = sat_locs(s_i, t_s)
+        f = x_i.dot(s)
+        g = x_i.dot(s)
+        if f > g:
             s_up = 1  # true
         else:
             s_up = 0  # false
@@ -173,7 +174,7 @@ def sat_time(x_v_i, t_v, s_i_list):  # first attempt at a newtons method code - 
         dif_0 = (sat_0 - x_v_i)
 
         t[0] = t_v - np.linalg.norm(dif_0) / c
-        errmax = .001 / c
+        errmax = .0001 / c
 
         while errtime >= errmax:
             sat = sat_locs(s_i, t[0])
