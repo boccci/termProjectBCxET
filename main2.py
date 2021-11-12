@@ -4,7 +4,7 @@ import pandas as pd
 import sys
 
 
-data = pd.read_csv('data_dup.dat', sep='/=', header = None, skipinitialspace=False, names =['value','name'])
+data = pd.read_csv('data.dat', sep='/=', header = None, skipinitialspace=False, names =['value','name'])
 df = data.copy()
 
 # Split value column into arrays by receiver and satellite information
