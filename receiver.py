@@ -1,9 +1,9 @@
 import numpy as np
 import math as math
 import pandas as pd
-from decimal import *
+import sys
 
-data = pd.read_csv('data_dup.dat', sep='/=', header = None, skipinitialspace=False, names =['value','name'])
+data = pd.read_csv('data.dat', sep='/=', header = None, skipinitialspace=False, names =['value','name'])
 df = data.copy()
 
 # Split value column into arrays by receiver and satellite information
@@ -140,58 +140,19 @@ def writeout(t_s_list, above_list):
     sat_exp = []
     # sat_total = np.array([],[],[])
     n_w = 0
-    len_w = len(above_list)-1
-    while n_w <= len_w:
-        s_x = sat_locs(sats[above_list[n_w]],t_s_list[above_list[n_w]])
+    len_w = len(above_list)
+    while n_w < len_w:
+        s_x = sat_locs(sats[above_list[n_w]], t_s_list[above_list[n_w]])
         x = s_x[0]
         y = s_x[1]
         z = s_x[2]
-        above_list[n_w]
         sat_exp = [above_list[n_w], t_s_list[above_list[n_w]], x, y, z]
-        print(*sat_exp),
-        # sat_total.append(sat_exp)
+        sys.stdout.write("{} {} {} {} {}".format(sat_exp[0], sat_exp[1], sat_exp[2], sat_exp[3], sat_exp[4]))
         n_w = n_w + 1
-
-    return sat_exp #need a way to save the last x as an array without it telling me its an array
-
-
-read_in = open(r"read_in.txt", "w+")
-
-import subprocess #this should all be written as a single command
-proc = subprocess.Popen(['python','satellite.py'],stdout=subprocess.PIPE) #will need to ask for engine and program and then input those instead
-while True:
-    line = proc.stdout.readline()
-    l = str(line.rstrip())
-    if not line:
-        break
-    read_in.write('{}\n'.format(l))
-
-read_in.close()
-
-with open("read_in.txt", 'r') as file:
-    Data = []
-    n = 0
-    for lines in file:
-        Data.append(lines.replace("\n","").replace("'","").replace('"',"").replace('b',""))
-        n = n+1
-
-print(n)
-
-# # data_array = np.ndarray(shape=(n,3))
-# #
-# # print(*data_array)
-#
-# print(Data[0])
-# data_array = np.ndarray(shape = (n,2))
-#
-# i=0
-#
-# while i <= n-1:
-#     data = Data[i]
-#     data_array[i, 0] = float(data.split(' ')[0])
-#     data_array[i, 1] = float(data.split(' ')[1])
-#     i = i+1
-# i = 0
+        print()
+    if n_w == len_w:
+        x = 0
+    return sat_exp
 
 def Jacobian(s_i_list, t_i_list, x_k):
     J = np.array([],[],[])
@@ -272,4 +233,29 @@ def Newt(s_i_list,t_i_list,x_0):
     return x_k
 
 
+lines = sys.stdin.readlines()
+i=0
+def receive():
+    for line in lines:
+        lines_strip = line.rsplit()
+        lines_float = []
+        data = np.zeros(shape=(len(lines),0))
+        for n in range(0,len(lines_strip)):
+            lines_float.append( float(lines_strip[int(n)]))
+        data[i,0] = lines_float
+        if data[i,0][0] < data[i-1,0][0]:
+            sat_list = []
+            t_list = []
+            for k in range(0, len(data)-1):
+                sat_list.append(int(data[k,0][0]))
+                t_list.append(float(data[k,0][1]))
+            x = Newt(sat_list,t_list,B12)
+            x_r = cart2rad(x)
+            x_d = rad2deg(x_r)
+            x_s = np.array(data[0,0][2], data[0,0][3], data[0,0][4])
+            t_v = np.linalg.norm(x - x_s)/c+data[0,0][1]
+            sys.stdout.write("{} {} {} {} {} {} {} {} {}".format(t_v,x_d[0],x_d[1],x_d[2],x_d[3],x_d[4],x_d[5],x_d[6],x_d[7],x_d[8]))
+        else:
+            i = i+1
 
+receive()
