@@ -6,8 +6,7 @@ import sys
 data = pd.read_csv('data.dat', sep='/=', header=None, skipinitialspace=False, names=['value', 'name'], engine='python')
 df = data.copy()
 
-#
-import select
+
 
 # Split value column into arrays by receiver and satellite information
 # split df (nums_data = numerical data ONLY)
@@ -248,18 +247,16 @@ vehicle = np.array([0,0,0,0,0,0,0,0,0,0])
 
 for line in sys.stdin:
     lines_strip = line.rsplit()
-    lines_float=[]
+    lines_float = []
     for n in range(0,len(lines_strip)):
         lines_float[n] = float(lines_strip[n])
-        x_v = np.array([[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]]])
-        x_v_c = deg2cart(x_v)  # B12 here will be replaced by a read-in x_v from vehicle.log
-        t_v = lines_float[0]  # will be read in
-        x_v_t = rotation_offset(x_v_c, t_v)
+    x_v = np.array([[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]]])
+    x_v_c = deg2cart(x_v)  # B12 here will be replaced by a read-in x_v from vehicle.log
+    t_v = lines_float[0]  # will be read in
+    x_v_t = rotation_offset(x_v_c, t_v)
 
-        n = 0
+    t_s = sat_time(x_v_t, t_v, sats)
+    s_ab = horiz_check(x_v_t, sats, t_v)
+    above = above_index(s_ab, 1)
 
-        t_s = sat_time(x_v_t, t_v, sats)
-        s_ab = horiz_check(x_v_t, sats, t_v)
-        above = above_index(s_ab, 1)
-
-        xp = writeout(t_s, above)
+    xp = writeout(t_s, above)
