@@ -341,6 +341,7 @@ def receive():
         if data[i][0] - data[i - 1][0] < 0:
             split = i
             i = i+1
+
         for k in range(0, len(data)):
             sat_list.append(int(data[k][0]))
             t_list.append(int(data[k][1]))
@@ -350,10 +351,6 @@ def receive():
             if data[j][0] - data[j-1][0] > 0:
                 j = j + 1
             else:
-
-                for k in range(0, split):
-                    t_s_x[k] = t_list[split+k]
-                    print(t_s_x)
                 x = Newt(sat_list, t_list, deg2cart(B12))
                 x_r = cart2rad(x)
                 x_d = rad2deg(x_r)
@@ -362,8 +359,49 @@ def receive():
                 sys.stdout.write(
                     "{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
                                                              x_d[7], x_d[8]))
-                log.write("{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
-                                                                   x_d[7], x_d[8]))
+                log.write("{} {}".format( x_d[7], x_d[8]))
                 i = i + 1
+# def receive():
+#     i = 0
+#     for line in lines:
+#         lines_strip = line.rsplit()
+#         lines_float = []
+#         for n in range(0, len(lines_strip)):
+#             lines_float.append(float(lines_strip[n]))
+#             data[i, n] = lines_float[n]
+#         i = i + 1
+#     j = 0
+#     leng = len(data)
+#     i = 0
+#     sat_list = []
+#     t_list = []
+#     split = 0
+#     t_s_x = []
+#     while i < leng:
+#         if data[i][0] - data[i - 1][0] < 0:
+#             split = i
+#             i = i + 1
+#
+#             for k in range(0, len(data)):
+#                 sat_list.append(int(data[k][0]))
+#                 t_list.append(int(data[k][1]))
+#             for k in range(0, split):
+#                 t_s_x[k] = t_list[split + k]
+#                 print(t_s_x)
+#             x = Newt(sat_list, t_list, deg2cart(B12))
+#             x_r = cart2rad(x)
+#             x_d = rad2deg(x_r)
+#             x_s = np.array([data[j][2], data[j][3], data[j][4]])
+#             t_v = np.linalg.norm(x - x_s) / c + data[j, 1]
+#             sys.stdout.write(
+#                 "{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5],
+#                                                          x_d[6],
+#                                                          x_d[7], x_d[8]))
+#             log.write("{} {}".format( x_d[7], x_d[8]))
+#             i = i + 1
+#         else:
+#             i = i + 1
+
+
 
 receive()
