@@ -242,19 +242,17 @@ def writeout(t_s_list, above_list):
     return sat_exp
 
 # testing
+lines = sys.stdin.readlines()
 
-vehicle = np.array([0,0,0,0,0,0,0,0,0,0])
-
-for line in sys.stdin:
+for line in lines:
     lines_strip = line.rsplit()
     lines_float = []
-    for n in range(0,len(lines_strip)):
+    for n in lines_strip:
         lines_float[n] = float(lines_strip[n])
-    x_v = np.array([[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]]])
+    x_v = np.array([[lines_float[1]],[lines_float[2]],[lines_float[3]],[lines_float[4]],[lines_float[5]],[lines_float[6]],[lines_float[7]],[lines_float[8]]])
     x_v_c = deg2cart(x_v)  # B12 here will be replaced by a read-in x_v from vehicle.log
     t_v = lines_float[0]  # will be read in
     x_v_t = rotation_offset(x_v_c, t_v)
-
     t_s = sat_time(x_v_t, t_v, sats)
     s_ab = horiz_check(x_v_t, sats, t_v)
     above = above_index(s_ab, 1)
