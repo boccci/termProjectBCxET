@@ -224,6 +224,23 @@ def above_index(list, item):
             start_at = loc
     return locs
 
+def writeout(t_s_list, above_list):
+    sat_exp = []
+    # sat_total = np.array([],[],[])
+    n_w = 0
+    len_w = len(above_list)
+    while n_w < len_w:
+        s_x = sat_locs(sats[above_list[n_w]], t_s_list[above_list[n_w]])
+        x = s_x[0]
+        y = s_x[1]
+        z = s_x[2]
+        sat_exp = [above_list[n_w], t_s_list[above_list[n_w]], x, y, z]
+        sys.stdout.write("{} {} {} {} {}".format(sat_exp[0], sat_exp[1], sat_exp[2], sat_exp[3], sat_exp[4]))
+        n_w = n_w + 1
+        print()
+    if n_w == len_w:
+        x = 0
+    return sat_exp
 
 # testing
 
@@ -234,35 +251,15 @@ for line in sys.stdin:
     lines_float=[]
     for n in range(0,len(lines_strip)):
         lines_float[n] = float(lines_strip[n])
-    x_v = np.array([[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]]])
-    x_v_c = deg2cart(x_v)  # B12 here will be replaced by a read-in x_v from vehicle.log
-    t_v = lines_float[0]  # will be read in
-    x_v_t = rotation_offset(x_v_c, t_v)
+        x_v = np.array([[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]],[lines_float[1]]])
+        x_v_c = deg2cart(x_v)  # B12 here will be replaced by a read-in x_v from vehicle.log
+        t_v = lines_float[0]  # will be read in
+        x_v_t = rotation_offset(x_v_c, t_v)
 
-    n = 0
+        n = 0
 
-    t_s = sat_time(x_v_t, t_v, sats)
-    s_ab = horiz_check(x_v_t, sats, t_v)
-    above = above_index(s_ab, 1)
+        t_s = sat_time(x_v_t, t_v, sats)
+        s_ab = horiz_check(x_v_t, sats, t_v)
+        above = above_index(s_ab, 1)
 
-
-    def writeout(t_s_list, above_list):
-        sat_exp = []
-        # sat_total = np.array([],[],[])
-        n_w = 0
-        len_w = len(above_list)
-        while n_w < len_w:
-            s_x = sat_locs(sats[above_list[n_w]], t_s_list[above_list[n_w]])
-            x = s_x[0]
-            y = s_x[1]
-            z = s_x[2]
-            sat_exp = [above_list[n_w], t_s_list[above_list[n_w]], x, y, z]
-            sys.stdout.write("{} {} {} {} {}".format(sat_exp[0], sat_exp[1], sat_exp[2], sat_exp[3], sat_exp[4]))
-            n_w = n_w + 1
-            print()
-        if n_w == len_w:
-            x = 0
-        return sat_exp
-
-
-      xp = writeout(t_s, above)
+        xp = writeout(t_s, above)
