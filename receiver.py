@@ -282,7 +282,9 @@ def Newt(s_i_list,t_i_list,x_0):
 
 lines = sys.stdin.readlines()
 log = open("receiver.log", "w+")
-
+log.write("Log: Robert Caldwell, Emily Toney. \n Input:\n")
+for line in lines:
+    log.write("{}\n".format(line))
 
 for line in lines:
     lines_strip = line.rsplit()
@@ -332,24 +334,25 @@ def receive():
     j=0
     leng = len(data)
     i = 0
-    if data[i][0] - data[i-1][0] > 0:
-        i = i + 1
-    else:
-        sat_list = []
-        t_list = []
-        for k in range(0, len(data)):
-            sat_list.append(int(data[k][0]))
-            t_list.append(float(data[k][1]))
-        x = Newt(sat_list, t_list, deg2cart(B12))
-        x_r = cart2rad(x)
-        x_d = rad2deg(x_r)
-        x_s = np.array([data[0][2], data[0][3], data[0][4]])
-        t_v = np.linalg.norm(x - x_s) / c + data[0, 1]
-        sys.stdout.write(
-            "{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
-                                                     x_d[7], x_d[8]))
-        log.write("{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
-                                                           x_d[7], x_d[8]))
-    i = i + 1
+    while i < leng:
+        if data[i][0] - data[i-1][0] > 0:
+            i = i + 1
+        else:
+            sat_list = []
+            t_list = []
+            for k in range(0, len(data)):
+                sat_list.append(int(data[k][0]))
+                t_list.append(float(data[k][1]))
+            x = Newt(sat_list, t_list, deg2cart(B12))
+            x_r = cart2rad(x)
+            x_d = rad2deg(x_r)
+            x_s = np.array([data[0][2], data[0][3], data[0][4]])
+            t_v = np.linalg.norm(x - x_s) / c + data[0, 1]
+            sys.stdout.write(
+                "{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
+                                                         x_d[7], x_d[8]))
+            log.write("{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
+                                                               x_d[7], x_d[8]))
+            i = i + 1
 
 receive()
