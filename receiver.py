@@ -234,15 +234,16 @@ def Newt(s_i_list,t_i_list,x_0):
 
 
 lines = sys.stdin.readlines()
-i=0
+
 def receive():
+    i = 0
     for line in lines:
         lines_strip = line.rsplit()
         lines_float = []
-        data = np.zeros(shape=(len(lines),0))
+        data = np.zeros(shape=(len(lines),len(lines_strip)))
         for n in range(0,len(lines_strip)):
             lines_float.append( float(lines_strip[int(n)]))
-        data[i,0] = lines_float
+            data[i,n] = lines_float[n]
         if data[i,0][0] < data[i-1,0][0]:
             sat_list = []
             t_list = []
@@ -255,7 +256,8 @@ def receive():
             x_s = np.array(data[0,0][2], data[0,0][3], data[0,0][4])
             t_v = np.linalg.norm(x - x_s)/c+data[0,0][1]
             sys.stdout.write("{} {} {} {} {} {} {} {} {}".format(t_v,x_d[0],x_d[1],x_d[2],x_d[3],x_d[4],x_d[5],x_d[6],x_d[7],x_d[8]))
+            i = i + 1
         else:
-            i = i+1
+            i = i + 1
 
 receive()
