@@ -87,11 +87,11 @@ def rad2cart(rad):
 
 def deg2cart(deg):  # if you want to do it all at once.
 
-    [dt, mt, st, sign] = [deg[0], deg[1], deg[2], deg[3]]
+    [dt, mt, st, sign] = [deg[1], deg[2], deg[3], deg[4]]
     Lat_d2r = 2 * pi * sign * (dt + (mt + st / 60) / 60) / 360
-    [dg, mg, sg, sign] = [deg[4], deg[5], deg[6], deg[7]]
+    [dg, mg, sg, sign] = [deg[5], deg[6], deg[7], deg[8]]
     Long_d2r = 2 * pi * sign * (dg + (mg + sg / 60) / 60) / 360
-    d2r = [Lat_d2r, Long_d2r, deg[8]]
+    d2r = [Lat_d2r, Long_d2r, deg[9]]
     x = (R + d2r[2]) * np.cos(d2r[0]) * np.cos(d2r[1])
     y = (R + d2r[2]) * np.cos(d2r[0]) * np.sin(d2r[1])
     z = (R + d2r[2]) * np.sin(d2r[0])
@@ -141,8 +141,7 @@ def rotation_offset(x, t_r):  # this will compute x_v at t_v
     x_off = np.dot(offset, x)
     return x_off
 
-def horiz_check(x_i, s_i_list,
-                t_s):  # cartesian coords, we can run this function recursively for sets of satellites and singular x with some for loops
+def horiz_check(x_i, s_i_list, t_s):  # cartesian coords, we can run this function recursively for sets of satellites and singular x with some for loops
     truth_list = []
     n = 0
     while n < 24:
@@ -225,22 +224,14 @@ lines = sys.stdin.readlines()
 
 for line in lines:
     lines_strip = line.rsplit()
-    sys.stdout.write(lines_strip)
     lines_float = []
-    sys.stdout.write(lines_float)
     for n in range(0,len(lines_strip)):
         lines_float.append( float(lines_strip[int(n)]) )
-        sys.stdout.write(lines_float)
-    v = np.array([[lines_float[0]],[lines_float[1]],[lines_float[2]],[lines_float[3]],[lines_float[4]],[lines_float[5]],[lines_float[6]],[lines_float[7]],[lines_float[8]]])
-    sys.stdout.write(v)
+    v = np.array([[lines_float[0]],[lines_float[1]],[lines_float[2]],[lines_float[3]],[lines_float[4]],[lines_float[5]],[lines_float[6]],[lines_float[7]],[lines_float[8]],[lines_float[9]]])
     x_v_c = deg2cart(v)  # B12 here will be replaced by a read-in x_v from vehicle.log
-    sys.stdout.write(x_v_c)
     t_v = lines_float[0]  # will be read in
-    sys.stdout.write(t_v)
     x_v_t = rotation_offset(x_v_c, t_v)
-    sys.stdout.write(x_v_t)
     t_s = sat_time(x_v_t, t_v, sats)
-    sys.stdout.write(x_v_t)
     s_ab = horiz_check(x_v_t, sats, t_v)
     above = above_index(s_ab, 1)
 
