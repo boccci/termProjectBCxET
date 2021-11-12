@@ -3,7 +3,7 @@ import math as math
 import pandas as pd
 import sys
 
-data = pd.read_csv('data.dat', sep='/=', header = None, skipinitialspace=False, names =['value','name'])
+data = pd.read_csv('data.dat', sep='/=', header = None, skipinitialspace=False, names =['value','name'], engine="python")
 df = data.copy()
 
 # Split value column into arrays by receiver and satellite information
@@ -155,30 +155,73 @@ def writeout(t_s_list, above_list):
     return sat_exp
 
 def Jacobian(s_i_list, t_i_list, x_k):
-    J = np.array([],[],[])
+    J = np.zeros(shape=(3,3))
     k = 0
     j = 0
     while j <= 2:
         while k <= 2:
-            s_i = sat_locs(s_i_list[j], t_i_list[j])
-            s_i_1 = sat_locs(s_i_list[j+1], t_i_list[j+1])
+            s_i = sat_locs(sats[s_i_list[j]], t_i_list[j])
+            s_i_1 = sat_locs(sats[s_i_list[j+1]], t_i_list[j+1])
             J[j, k] = (s_i[k]-x_k[k])/np.linalg.norm(s_i[k]-x_k[k])-(s_i_1[k]-x_k[k])/np.linalg.norm(s_i_1[k]-x_k[k])
             k = k + 1
         j = j + 1
     return J
 
 def Func(s_i_list, t_i_list, x_k):
-    F = np.array([],[],[])
+    F = np.zeros(shape=(3,1))
     j = 0
     k = 0
     while j <= 2:
-        while k <= 2:
-            s_i = sat_locs(s_i_list[j], t_i_list[j])
-            s_i_1 = sat_locs(s_i_list[j + 1], t_i_list[j + 1])
-            F[j,k] = np.linalg.norm(s_i_1[k]-x_k[k]) - np.linalg.norm(s_i[k]-x_k[k]) - c*(t_i_list[j]-t_i_list[j+1])
-            k = k + 1
+
+        s_i = sat_locs(sats[s_i_list[j]], t_i_list[j])
+        s_i_1 = sat_locs(sats[s_i_list[j + 1]], t_i_list[j + 1])
+        F[j,0] = np.linalg.norm(s_i_1[j]-x_k[j]) - np.linalg.norm(s_i[j]-x_k[j]) - c*(t_i_list[j]-t_i_list[j+1])
         j = j + 1
     return F
+
+# def LU(A, b):
+#     N = len(A)
+#     L = np.zeros(shape=(N, N))
+#     U = np.zeros(shape=(N, N))
+#     x = np.zeros(shape=(N, 1))
+#     y = np.zeros(shape=(N, 1))
+#     for i in range(N):
+#
+#         for j in range(i, N):  #
+#             sum = 0
+#             for k in range(i):
+#                 sum = sum + L[i, k] * U[k, j]
+#             U[i, j] = A[i, j] - sum
+#         for j in range(i, N):
+#             if i == j:
+#                 L[i, i] = 1
+#             else:
+#                 sum = 0
+#                 for k in range(i):
+#                     sum = sum + L[j, k] * U[k, i]
+#                 L[j, i] = (A[j, i] - sum) / U[i, i]
+#
+#     while i <= N-1:
+#         if i == 0:
+#             y[0, 0] = b[0, 0]
+#             i = i + 1
+#         else:
+#             sum = 0
+#             for k in range(i):
+#                 sum = sum + y[i - 1, 0] * L[i, i - 1]
+#                 y[i, 0] = b[i, 0] - sum
+#             i = i + 1
+#     while i >= 0:
+#         if i == N-1:
+#             x[i, 0] = y[i, 0] / U[i, i]
+#             i = i - 1
+#         else:
+#             sum = 0
+#             for k in range(i , N-1):
+#                 sum = sum + U[i, k] * x[k, 0]
+#             x[i, 0] = (y[i, 0] - sum) / U[i, i]
+#     return x
+
 
 def LU(A, b):
     N = len(A)
@@ -186,7 +229,7 @@ def LU(A, b):
     U = np.zeros(shape=(N,N))
     x = np.zeros(shape=(N,1))
     y = np.zeros(shape=(N,1))
-    for i in range(N):
+    for i in range(0,N-1):
 
         for j in range(i, N): #
             sum = 0
@@ -201,63 +244,83 @@ def LU(A, b):
                 for k in range(i):
                     sum = sum + L[j,k]*U[k,i]
                 L[j,i] = (A[j,i]-sum)/U[i,i]
-    while i <= N:
-        if i == 0:
-            y[0,0] = b[0,0]
-            i = i + 1
-        else:
-            sum = 0
-            for k in range(i):
-                sum = sum + y[i-1,0]*L[i,i-0]
-                y[i,0] = b[i,0] - sum
-            i = i + 1
-    while i >= 0:
-        if i == N:
-            x[N,0] = y[N,0]/U[N,N]
-            i = i - 1
-        else:
-            sum = 0
-            for k in range(i+1,N):
-                sum = sum + U[i,k]*x[k,0]
-            x[i,0] = (y[i,0]- sum)/U[i,i]
-    return x
+        j=0
+        while j <= N-1:
+            if j == 0:
+                y[0,0] = b[0,0]
+                j = j + 1
+            else:
+                sum = 0
+                for k in range(i):
+                    sum = sum + y[j-1,0]*L[j,j-1]
+                    y[j,0] = b[j,0] - sum
+                j = j + 1
+        j=N-1
+        while j >= 0:
+            if j == N-1:
+                x[j,0] = y[j,0]/U[j,j]
+                j = j - 1
+            else:
+                sum = 0
+                for k in range(j+1,N):
+                    sum = sum + U[j,k]*x[k,0]
+                x[i,0] = (y[j,0]- sum)/U[j,j]
+                j = j - 1
+        return x
 
 def Newt(s_i_list,t_i_list,x_0):
-    x_k = x_0
-    s = np.array([0],[0],[0])
+    x_k = np.zeros(shape=(3,1))
+    x_k[0] = x_0[0]
+    x_k[1] = x_0[1]
+    x_k[2] = x_0[2]
+    s_k = np.ones(shape=(3,1))
     while np.linalg.norm(s) >= .0001:
         J = Jacobian(s_i_list, t_i_list, x_k)
         F = Func(s_i_list, t_i_list, x_k)
-        s = LU(J,-F)
-        x_k[0] = x_k[0] + s
+        s_k = LU(J,-F)
+        x_k = x_k + s_k
     return x_k
 
 
 lines = sys.stdin.readlines()
+log = open("receiver.log", "w+")
+
+
+for line in lines:
+    lines_strip = line.rsplit()
+    lines_float = []
+    data = np.zeros(shape=(len(lines), len(lines_strip)))
 
 def receive():
     i = 0
     for line in lines:
         lines_strip = line.rsplit()
         lines_float = []
-        data = np.zeros(shape=(len(lines),len(lines_strip)))
         for n in range(0,len(lines_strip)):
-            lines_float.append( float(lines_strip[int(n)]))
+            lines_float.append( float(lines_strip[n]))
             data[i,n] = lines_float[n]
-        if data[i,0][0] < data[i-1,0][0]:
-            sat_list = []
-            t_list = []
-            for k in range(0, len(data)-1):
-                sat_list.append(int(data[k,0][0]))
-                t_list.append(float(data[k,0][1]))
-            x = Newt(sat_list,t_list,B12)
-            x_r = cart2rad(x)
-            x_d = rad2deg(x_r)
-            x_s = np.array(data[0,0][2], data[0,0][3], data[0,0][4])
-            t_v = np.linalg.norm(x - x_s)/c+data[0,0][1]
-            sys.stdout.write("{} {} {} {} {} {} {} {} {}".format(t_v,x_d[0],x_d[1],x_d[2],x_d[3],x_d[4],x_d[5],x_d[6],x_d[7],x_d[8]))
-            i = i + 1
-        else:
-            i = i + 1
+        i = i + 1
+    i=0
+    if data[i,0] - data[i-1,0] > 0:
+        i = i + 1
+    else:
+        sat_list = []
+        t_list = []
+        for k in range(0, len(data)):
+            sat_list.append(int(data[k, 0]))
+            t_list.append(float(data[k, 1]))
+        print(sat_list)
+        print(t_list)
+        x = Newt(sat_list, t_list, deg2cart(B12))
+        x_r = cart2rad(x)
+        x_d = rad2deg(x_r)
+        x_s = np.array([data[0, 2], data[0, 3], data[0, 4]])
+        t_v = np.linalg.norm(x - x_s) / c + data[0, 1]
+        sys.stdout.write(
+            "{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
+                                                     x_d[7], x_d[8]))
+        log.write("{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
+                                                           x_d[7], x_d[8]))
+        i = i + 1
 
 receive()

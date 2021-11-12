@@ -187,7 +187,6 @@ def sat_time(x_v_i, t_v, s_i_list):  # first attempt at a newtons method code - 
         n = n + 1
     return t_s_list
 
-
 def above_index(list, item):
     start_at = -1
     locs = []
@@ -201,7 +200,7 @@ def above_index(list, item):
             start_at = loc
     return locs
 
-def writeout(t_s_list, above_list):
+def writeout(t_s_list, above_list, logfile):
     sat_exp = []
     # sat_total = np.array([],[],[])
     n_w = 0
@@ -212,15 +211,21 @@ def writeout(t_s_list, above_list):
         y = s_x[1]
         z = s_x[2]
         sat_exp = [above_list[n_w], t_s_list[above_list[n_w]], x, y, z]
-        sys.stdout.write("{} {} {} {} {}".format(sat_exp[0], sat_exp[1], sat_exp[2], sat_exp[3], sat_exp[4]))
+        sys.stdout.write("{} {} {} {} {}\n".format(sat_exp[0], sat_exp[1], sat_exp[2], sat_exp[3], sat_exp[4]))
+        logfile.write("{} {} {} {} {}\n".format(sat_exp[0], sat_exp[1], sat_exp[2], sat_exp[3], sat_exp[4]))
         n_w = n_w + 1
-        print()
     if n_w == len_w:
         x = 0
     return sat_exp
 
 # testing
 lines = sys.stdin.readlines()
+
+log = open("satellite.log", "w+")
+log.write("Log: Robert Caldwell, Emily Toney. \n Input:\n")
+for line in lines:
+    log.write("{}\n".format(line))
+log.write("Output:\n")
 
 for line in lines:
     lines_strip = line.rsplit()
@@ -234,5 +239,4 @@ for line in lines:
     t_s = sat_time(x_v_t, t_v, sats)
     s_ab = horiz_check(x_v_t, sats, t_v)
     above = above_index(s_ab, 1)
-
-    xp = writeout(t_s, above)
+    xp = writeout(t_s, above, log)
