@@ -288,7 +288,37 @@ for line in lines:
     lines_strip = line.rsplit()
     lines_float = []
     data = np.zeros(shape=(len(lines), len(lines_strip)))
-
+# def receive():
+#     i = 0
+#     for line in lines:
+#         lines_strip = line.rsplit()
+#         lines_float = []
+#         for n in range(0,len(lines_strip)):
+#             lines_float.append( float(lines_strip[n]))
+#             data[i,n] = lines_float[n]
+#         i = i + 1
+#     #data has ALL lines from stdin, need to run each step separately - need a way to separate
+#     j=0
+#     print(data)
+#     leng = len(data)
+#     for j in range(0,leng):
+#         if data[j,0] > data[j-1,0]:
+#             sat_list = []
+#             t_list = []
+#             for k in range(0, len(data)):
+#                 sat_list.append(int(data[k, 0]))
+#                 t_list.append(float(data[k, 1]))
+#         x = Newt(sat_list, t_list, deg2cart(B12))
+#         x_r = cart2rad(x)
+#         x_d = rad2deg(x_r)
+#         x_s = np.array([data[0, 2], data[0, 3], data[0, 4]])
+#         t_v = np.linalg.norm(x - x_s) / c + data[0, 1]
+#         sys.stdout.write(
+#             "{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
+#                                                      x_d[7], x_d[8]))
+#         log.write("{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
+#                                                            x_d[7], x_d[8]))
+#         i = i + 1
 def receive():
     i = 0
     for line in lines:
@@ -298,25 +328,28 @@ def receive():
             lines_float.append( float(lines_strip[n]))
             data[i,n] = lines_float[n]
         i = i + 1
-    i=0
-    if data[i,0] - data[i-1,0] > 0:
+
+    j=0
+    leng = len(data)
+    i = 0
+    if data[i][0] - data[i-1][0] > 0:
         i = i + 1
     else:
         sat_list = []
         t_list = []
         for k in range(0, len(data)):
-            sat_list.append(int(data[k, 0]))
-            t_list.append(float(data[k, 1]))
+            sat_list.append(int(data[k][0]))
+            t_list.append(float(data[k][1]))
         x = Newt(sat_list, t_list, deg2cart(B12))
         x_r = cart2rad(x)
         x_d = rad2deg(x_r)
-        x_s = np.array([data[0, 2], data[0, 3], data[0, 4]])
+        x_s = np.array([data[0][2], data[0][3], data[0][4]])
         t_v = np.linalg.norm(x - x_s) / c + data[0, 1]
         sys.stdout.write(
             "{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
                                                      x_d[7], x_d[8]))
         log.write("{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
                                                            x_d[7], x_d[8]))
-        i = i + 1
+    i = i + 1
 
 receive()
