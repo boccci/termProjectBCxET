@@ -141,26 +141,6 @@ def rotation_offset(x, t_r):  # this will compute x_v at t_v
     x_off = np.dot(offset, x)
     return x_off
 
-
-# def horiz_check(x_i, s_i_list, t_s):  #cartesian coords, we can run this function recursively for sets of satellites and singular x with some for loops
-#     truth_list = []
-#     n = 0
-#     while n < 24:
-#         s_i = s_i_list[n]
-#         # u = np.array([s_i[0], s_i[1], s_i[2]])
-#         # v = np.array([s_i[3], s_i[4], s_i[5]])
-#         # s = (R+s_i[7])*(-1*u*np.sin(2*pi*t_s/p + s_i[8]) + v*np.cos(2*pi*t_s/p + s_i[8]))
-#         s = sat_locs(s_i,t_s)
-#         f = np.dot(x_i,s)
-#         g = np.dot(x_i,x_i)
-#         if f>g:
-#             s_up = 1  #true
-#         else:
-#             s_up = 0  #false
-#         truth_list.append(s_up)
-#         n = n+1
-#     return truth_list #boolean
-
 def horiz_check(x_i, s_i_list,
                 t_s):  # cartesian coords, we can run this function recursively for sets of satellites and singular x with some for loops
     truth_list = []
@@ -181,8 +161,7 @@ def horiz_check(x_i, s_i_list,
     return truth_list  # boolean
 
 
-def sat_time(x_v_i, t_v,
-             s_i_list):  # first attempt at a newtons method code - also worth mentioning that t_v will be read in
+def sat_time(x_v_i, t_v, s_i_list):  # first attempt at a newtons method code - also worth mentioning that t_v will be read in
     t_s_list = []
     errtime = 1  # a lot of ugly declarations
     n = 0
@@ -246,14 +225,22 @@ lines = sys.stdin.readlines()
 
 for line in lines:
     lines_strip = line.rsplit()
+    sys.stdout.write(lines_strip)
     lines_float = []
-    for n in lines_strip:
-        lines_float[n] = float(lines_strip[n])
-    x_v = np.array([[lines_float[1]],[lines_float[2]],[lines_float[3]],[lines_float[4]],[lines_float[5]],[lines_float[6]],[lines_float[7]],[lines_float[8]]])
-    x_v_c = deg2cart(x_v)  # B12 here will be replaced by a read-in x_v from vehicle.log
+    sys.stdout.write(lines_float)
+    for n in range(0,len(lines_strip)):
+        lines_float.append( float(lines_strip[int(n)]) )
+        sys.stdout.write(lines_float)
+    v = np.array([[lines_float[0]],[lines_float[1]],[lines_float[2]],[lines_float[3]],[lines_float[4]],[lines_float[5]],[lines_float[6]],[lines_float[7]],[lines_float[8]]])
+    sys.stdout.write(v)
+    x_v_c = deg2cart(v)  # B12 here will be replaced by a read-in x_v from vehicle.log
+    sys.stdout.write(x_v_c)
     t_v = lines_float[0]  # will be read in
+    sys.stdout.write(t_v)
     x_v_t = rotation_offset(x_v_c, t_v)
+    sys.stdout.write(x_v_t)
     t_s = sat_time(x_v_t, t_v, sats)
+    sys.stdout.write(x_v_t)
     s_ab = horiz_check(x_v_t, sats, t_v)
     above = above_index(s_ab, 1)
 
