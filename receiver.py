@@ -267,7 +267,7 @@ def Newt(s_i_list,t_i_list,x_0):
     x_k[2] = x_0[2]
     x = [x_k,x_0]
     err=1
-    errmax = .0001
+    errmax = .00001
     s_k = np.ones(shape=(3,1), dtype=float)
     while err >= errmax:
         J = Jacobian(s_i_list, t_i_list, x[0])
@@ -330,29 +330,40 @@ def receive():
             lines_float.append( float(lines_strip[n]))
             data[i,n] = lines_float[n]
         i = i + 1
-
     j=0
     leng = len(data)
     i = 0
+    sat_list = []
+    t_list = []
+    split = 0
+    t_s_x=[]
     while i < leng:
-        if data[i][0] - data[i-1][0] > 0:
-            i = i + 1
-        else:
-            sat_list = []
-            t_list = []
-            for k in range(0, len(data)):
-                sat_list.append(int(data[k][0]))
-                t_list.append(float(data[k][1]))
-            x = Newt(sat_list, t_list, deg2cart(B12))
-            x_r = cart2rad(x)
-            x_d = rad2deg(x_r)
-            x_s = np.array([data[0][2], data[0][3], data[0][4]])
-            t_v = np.linalg.norm(x - x_s) / c + data[0, 1]
-            sys.stdout.write(
-                "{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
-                                                         x_d[7], x_d[8]))
-            log.write("{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
-                                                               x_d[7], x_d[8]))
-            i = i + 1
+        if data[i][0] - data[i - 1][0] < 0:
+            split = i
+            i = i+1
+        for k in range(0, len(data)):
+            sat_list.append(int(data[k][0]))
+            t_list.append(int(data[k][1]))
+
+        for j in range(0, leng):
+
+            if data[j][0] - data[j-1][0] > 0:
+                j = j + 1
+            else:
+
+                for k in range(0, split):
+                    t_s_x[k] = t_list[split+k]
+                    print(t_s_x)
+                x = Newt(sat_list, t_list, deg2cart(B12))
+                x_r = cart2rad(x)
+                x_d = rad2deg(x_r)
+                x_s = np.array([data[j][2], data[j][3], data[j][4]])
+                t_v = np.linalg.norm(x - x_s) / c + data[j, 1]
+                sys.stdout.write(
+                    "{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
+                                                             x_d[7], x_d[8]))
+                log.write("{} {} {} {} {} {} {} {} {} {}\n".format(t_v, x_d[0], x_d[1], x_d[2], x_d[3], x_d[4], x_d[5], x_d[6],
+                                                                   x_d[7], x_d[8]))
+                i = i + 1
 
 receive()
